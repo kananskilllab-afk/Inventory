@@ -129,7 +129,11 @@ export default function Assignments({ showToast, departments }) {
       const dept = r.departmentId;
       return dept?.name ? <Badge variant="accent" style={{ background: `${dept.color}18`, color: dept.color }}>{dept.name}</Badge> : "—";
     }},
-    { key: "qty", label: "Qty", align: "center", render: (r) => r.quantityAssigned },
+    { key: "qty", label: "Qty", align: "center", render: (r) => (
+      <span>
+        {r.quantityAssigned} <span style={{ fontSize: 11, color: "var(--text-light)" }}>{r.itemId?.unit || "Pieces"}</span>
+      </span>
+    )},
     { key: "assignedDate", label: "Assigned", render: (r) => fmtDate(r.assignedDate) },
     { key: "expectedReturn", label: "Expected Return", render: (r) => fmtDate(r.expectedReturnDate) },
     { key: "status", label: "Status", align: "center", render: (r) => (
@@ -146,16 +150,24 @@ export default function Assignments({ showToast, departments }) {
     )},
   ];
 
-  // When item is selected, auto-set department
+  // When item is selected, auto-set department and reset person selection
   const handleItemChange = (itemId) => {
     const item = items.find((i) => i._id === itemId);
+    const newDeptId = item?.departmentId?._id || item?.departmentId || "";
     setForm({
       ...form,
       itemId,
-      departmentId: item?.departmentId?._id || item?.departmentId || form.departmentId,
+      departmentId: newDeptId,
+      personId: "", // reset — filtered people list will change
       conditionOnAssign: item?.condition || "Good",
     });
   };
+
+  // People filtered to the selected item's department (or all if no item/dept)
+  const selectedItemDeptId = form.departmentId;
+  const assignablePeople = selectedItemDeptId
+    ? people.filter((p) => (p.departmentId?._id || p.departmentId) === selectedItemDeptId)
+    : people;
 
   return (
     <div className="page-enter">
@@ -188,12 +200,24 @@ export default function Assignments({ showToast, departments }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <Select label="Item *" value={form.itemId} onChange={(e) => handleItemChange(e.target.value)}
             options={items.filter((i) => i.quantity > 0).map((i) => ({
-              value: i._id, label: `${i.name} (${i.sku}) — ${i.quantity} available`,
+              value: i._id, label: `${i.name} (${i.sku}) — ${i.quantity} ${i.unit || "Pieces"} available`,
             }))} style={{ gridColumn: "1/-1" }} />
-          <Select label="Assign To *" value={form.personId} onChange={(e) => setForm({ ...form, personId: e.target.value })}
-            options={people.map((p) => ({
-              value: p._id, label: `${p.name} (${p.employeeId})`,
-            }))} style={{ gridColumn: "1/-1" }} />
+          <div style={{ gridColumn: "1/-1" }}>
+            <Select
+              label={`Assign To *${selectedItemDeptId ? ` — showing ${assignablePeople.length} employees in this department` : ""}`}
+              value={form.personId}
+              onChange={(e) => setForm({ ...form, personId: e.target.value })}
+              options={assignablePeople.map((p) => ({
+                value: p._id,
+                label: `${p.name} (${p.employeeId})${p.userId ? " ✓" : ""}`,
+              }))}
+            />
+            {selectedItemDeptId && assignablePeople.length === 0 && (
+              <div style={{ marginTop: 6, padding: "8px 12px", background: "rgba(245,158,11,0.1)", borderRadius: 8, fontSize: 12, color: "#b45309" }}>
+                No employees in this department yet. Add employees in the People section first.
+              </div>
+            )}
+          </div>
           <Input label="Quantity" type="number" min="1" value={form.quantityAssigned}
             onChange={(e) => setForm({ ...form, quantityAssigned: e.target.value })} />
           <Select label="Condition" value={form.conditionOnAssign}
@@ -219,7 +243,7 @@ export default function Assignments({ showToast, departments }) {
         <div style={{ display: "grid", gap: 14 }}>
           <div style={{ fontSize: 14, color: "var(--text-muted)", padding: 12, background: "var(--surface-2)", borderRadius: 8 }}>
             <div>Assigned to: <strong>{returnModal?.personId?.name}</strong></div>
-            <div>Quantity: <strong>{returnModal?.quantityAssigned}</strong></div>
+            <div>Quantity: <strong>{returnModal?.quantityAssigned} {returnModal?.itemId?.unit || "Pieces"}</strong></div>
             <div>Receipt: <strong>{returnModal?.receiptNo}</strong></div>
           </div>
           <Select label="Condition on Return" value={returnForm.conditionOnReturn}

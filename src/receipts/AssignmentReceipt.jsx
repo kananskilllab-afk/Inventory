@@ -177,7 +177,7 @@ function buildReceiptHTML(a) {
             <tr>
               <td class="td-name">${item.name || "—"}</td>
               <td>${item.sku || "—"}${item.serialNumber ? ` / ${item.serialNumber}` : ""}</td>
-              <td><span class="qty-badge">${a.quantityAssigned}</span></td>
+              <td><span class="qty-badge">${a.quantityAssigned} ${item.unit || "Pieces"}</span></td>
               <td>${a.conditionOnAssign || "—"}</td>
               <td>${fmtDate(a.assignedDate)}</td>
               <td>${a.expectedReturnDate ? fmtDate(a.expectedReturnDate) : "<span style='color:#9ca3af'>No date set</span>"}</td>
@@ -427,7 +427,7 @@ export default function AssignmentReceipt({ assignment, onClose }) {
                     <span style={{
                       display: "inline-block", padding: "2px 10px", borderRadius: 99,
                       background: "#eff6ff", color: "#2563eb", fontWeight: 700, fontSize: 12,
-                    }}>{a.quantityAssigned}</span>
+                    }}>{a.quantityAssigned} {item.unit || "Pieces"}</span>
                   </td>
                   <td style={{ padding: "12px 14px", fontSize: 13, color: "#374151" }}>{a.conditionOnAssign}</td>
                   <td style={{ padding: "12px 14px", fontSize: 13, color: "#374151" }}>{fmtDate(a.assignedDate)}</td>
