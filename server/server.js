@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
 import User from "./models/User.js";
+import Person from "./models/Person.js";
 import Department from "./models/Department.js";
 import Category from "./models/Category.js";
 import Item from "./models/Item.js";
@@ -174,9 +175,40 @@ async function seedDatabase() {
   }
 }
 
+// Sync existing User accounts to People on startup (idempotent)
+async function syncPeopleFromUsers() {
+  const users = await User.find({ departmentId: { $ne: null } });
+  let created = 0;
+  for (const user of users) {
+    const existing = await Person.findOne({ userId: user._id });
+    if (existing) continue;
+    if (user.username.includes("@")) {
+      const byEmail = await Person.findOne({ email: user.username.toLowerCase(), userId: null });
+      if (byEmail) {
+        byEmail.userId = user._id;
+        await byEmail.save();
+        created++;
+        continue;
+      }
+    }
+    try {
+      await Person.create({
+        name: user.name,
+        employeeId: `USR-${user._id.toString().slice(-6).toUpperCase()}`,
+        departmentId: user.departmentId,
+        email: user.username.includes("@") ? user.username.toLowerCase() : "",
+        userId: user._id,
+      });
+      created++;
+    } catch (_) { /* skip duplicates */ }
+  }
+  if (created > 0) console.log(`✅ Synced ${created} user account(s) to People`);
+}
+
 // Connect to MongoDB and start server
 connectDB().then(async () => {
   await seedDatabase();
+  await syncPeopleFromUsers();
   // Only listen if not running on Vercel
   if (!process.env.VERCEL) {
     app.listen(PORT, () => {

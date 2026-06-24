@@ -7,6 +7,7 @@ const personSchema = new mongoose.Schema({
   designation: { type: String, default: "" },
   email: { type: String, default: "" },
   phone: { type: String, default: "" },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 export default mongoose.model("Person", personSchema);

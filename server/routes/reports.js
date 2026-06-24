@@ -17,10 +17,21 @@ router.get("/dashboard", async (req, res) => {
     const deptAssignFilter = isAdmin ? {} : { departmentId: req.user.departmentId };
 
     const totalItems = await Item.countDocuments(deptFilter);
-    const totalStock = await Item.aggregate([
+
+    // Total units currently IN stock (reduced when items are assigned out)
+    const stockAgg = await Item.aggregate([
       { $match: deptFilter },
       { $group: { _id: null, total: { $sum: "$quantity" } } },
     ]);
+    const totalStock = stockAgg[0]?.total || 0;
+
+    // Total units currently ASSIGNED OUT (sum of quantityAssigned for active assignments)
+    const assignedUnitsAgg = await Assignment.aggregate([
+      { $match: { ...deptAssignFilter, status: "Active" } },
+      { $group: { _id: null, total: { $sum: "$quantityAssigned" } } },
+    ]);
+    const totalAssignedUnits = assignedUnitsAgg[0]?.total || 0;
+
     const totalPeople = await Person.countDocuments(isAdmin ? {} : { departmentId: req.user.departmentId });
     const activeAssignments = await Assignment.countDocuments({ ...deptAssignFilter, status: "Active" });
     const overdueAssignments = await Assignment.countDocuments({
@@ -43,7 +54,11 @@ router.get("/dashboard", async (req, res) => {
           { $match: { departmentId: dept._id } },
           { $group: { _id: null, total: { $sum: "$quantity" }, value: { $sum: { $multiply: ["$quantity", "$costPrice"] } } } },
         ]);
-        const assigned = await Assignment.countDocuments({ departmentId: dept._id, status: "Active" });
+        const assignedCountAgg = await Assignment.aggregate([
+          { $match: { departmentId: dept._id, status: "Active" } },
+          { $group: { _id: null, total: { $sum: "$quantityAssigned" } } },
+        ]);
+        const activeAssignmentRecords = await Assignment.countDocuments({ departmentId: dept._id, status: "Active" });
         return {
           _id: dept._id,
           name: dept.name,
@@ -52,7 +67,8 @@ router.get("/dashboard", async (req, res) => {
           itemCount: items,
           totalStock: stockAgg[0]?.total || 0,
           stockValue: stockAgg[0]?.value || 0,
-          activeAssignments: assigned,
+          activeAssignments: activeAssignmentRecords,
+          totalAssignedUnits: assignedCountAgg[0]?.total || 0,
         };
       })
     );
@@ -64,7 +80,9 @@ router.get("/dashboard", async (req, res) => {
 
     let userActiveAssignments = 0;
     if (!isAdmin) {
-      const person = await Person.findOne({ email: req.user.username.toLowerCase() });
+      // Find by userId link first (reliable), fall back to email match
+      const person = await Person.findOne({ userId: req.user._id }) ||
+                     await Person.findOne({ email: req.user.username.toLowerCase() });
       if (person) {
         userActiveAssignments = await Assignment.countDocuments({ personId: person._id, status: "Active" });
       }
@@ -72,7 +90,8 @@ router.get("/dashboard", async (req, res) => {
 
     res.json({
       totalItems,
-      totalStock: totalStock[0]?.total || 0,
+      totalStock,
+      totalAssignedUnits,
       totalPeople,
       activeAssignments,
       overdueAssignments,

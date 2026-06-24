@@ -20,23 +20,46 @@ router.get("/", async (req, res) => {
       filter.departmentId = req.query.departmentId;
     }
 
-    const people = await Person.find(filter).populate("departmentId").sort({ name: 1 });
-    res.json(people);
+    const people = await Person.find(filter)
+      .populate("departmentId")
+      .populate("userId", "username role")
+      .sort({ name: 1 });
+
+    // Attach active assignment counts
+    const counts = await Assignment.aggregate([
+      { $match: { personId: { $in: people.map((p) => p._id) }, status: "Active" } },
+      { $group: { _id: "$personId", count: { $sum: 1 } } },
+    ]);
+    const countMap = {};
+    counts.forEach((c) => { countMap[c._id.toString()] = c.count; });
+
+    return res.json(
+      people.map((p) => ({
+        ...p.toObject(),
+        activeAssignments: countMap[p._id.toString()] || 0,
+      }))
+    );
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET single person with assignments
+// GET single person with full assignment history
 router.get("/:id", async (req, res) => {
   try {
-    const person = await Person.findById(req.params.id).populate("departmentId");
+    const person = await Person.findById(req.params.id)
+      .populate("departmentId")
+      .populate("userId", "username role name");
     if (!person) return res.status(404).json({ error: "Person not found" });
+
     const assignments = await Assignment.find({ personId: person._id })
       .populate("itemId")
       .populate("departmentId")
       .sort({ createdAt: -1 });
-    res.json({ person, assignments });
+
+    const activeCount = assignments.filter((a) => a.status === "Active").length;
+
+    res.json({ person, assignments, activeCount, totalCount: assignments.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -46,7 +69,9 @@ router.get("/:id", async (req, res) => {
 router.post("/", requireAdmin, async (req, res) => {
   try {
     const person = await Person.create(req.body);
-    const populated = await Person.findById(person._id).populate("departmentId");
+    const populated = await Person.findById(person._id)
+      .populate("departmentId")
+      .populate("userId", "username role");
     await ActivityLog.create({
       action: `Employee "${person.name}" (${person.employeeId}) added`,
       type: "person_added",
@@ -63,7 +88,9 @@ router.post("/", requireAdmin, async (req, res) => {
 router.put("/:id", requireAdmin, async (req, res) => {
   try {
     const { _id, __v, createdAt, updatedAt, ...updateData } = req.body;
-    const person = await Person.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate("departmentId");
+    const person = await Person.findByIdAndUpdate(req.params.id, updateData, { new: true })
+      .populate("departmentId")
+      .populate("userId", "username role");
     if (!person) return res.status(404).json({ error: "Person not found" });
     await ActivityLog.create({
       action: `Employee "${person.name}" updated`,
@@ -81,7 +108,9 @@ router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const activeAssignments = await Assignment.countDocuments({ personId: req.params.id, status: "Active" });
     if (activeAssignments > 0) {
-      return res.status(400).json({ error: `Cannot delete: ${activeAssignments} active assignment(s) exist. Return items first.` });
+      return res.status(400).json({
+        error: `Cannot delete: ${activeAssignments} active assignment(s) exist. Return items first.`,
+      });
     }
     const person = await Person.findByIdAndDelete(req.params.id);
     if (!person) return res.status(404).json({ error: "Person not found" });

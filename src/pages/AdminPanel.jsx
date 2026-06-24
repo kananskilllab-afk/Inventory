@@ -123,6 +123,21 @@ export default function AdminPanel({ showToast, departments }) {
       render: (r) => r.departmentName || <span style={{ color: "var(--text-light)" }}>All Departments</span>,
     },
     {
+      key: "profile", label: "Employee Profile",
+      render: (r) => r.linkedPerson ? (
+        <span style={{
+          display: "inline-flex", alignItems: "center", gap: 5,
+          padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600,
+          background: "rgba(99,102,241,0.1)", color: "#6366f1",
+        }}>
+          <Icon d="person" size={12} />
+          {r.linkedPerson.name}
+        </span>
+      ) : (
+        <span style={{ color: "var(--text-light)", fontSize: 12 }}>—</span>
+      ),
+    },
+    {
       key: "actions", label: "", align: "right", render: (r) => (
         <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
           <Btn size="sm" variant="ghost" icon="edit" onClick={() => {

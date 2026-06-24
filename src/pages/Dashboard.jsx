@@ -68,16 +68,16 @@ export default function Dashboard({ setPage }) {
         {isAdmin ? (
           <>
             <StatCard
-              label="Total Items" value={stats.totalItems}
+              label="Item Types in Stock" value={stats.totalItems}
               color="var(--accent)"
               icon={<Icon d="items" size={20} />}
             />
             <StatCard
-              label="Total Stock Units" value={stats.totalStock?.toLocaleString("en-IN") || 0}
+              label="Units Available (In Store)" value={(stats.totalStock || 0).toLocaleString("en-IN")}
               icon={<Icon d="stock" size={20} />}
             />
             <StatCard
-              label="Active Assignments" value={stats.activeAssignments}
+              label="Units Assigned Out" value={(stats.totalAssignedUnits || 0).toLocaleString("en-IN")}
               color="var(--info)"
               icon={<Icon d="assign" size={20} />}
             />
@@ -155,10 +155,10 @@ export default function Dashboard({ setPage }) {
                   <div style={{ fontWeight: 700, fontSize: 16 }}>{dept.name}</div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13 }}>
-                  <div><span style={{ color: "var(--text-muted)" }}>Items: </span><strong>{dept.itemCount}</strong></div>
-                  <div><span style={{ color: "var(--text-muted)" }}>Stock: </span><strong>{dept.totalStock}</strong></div>
-                  <div><span style={{ color: "var(--text-muted)" }}>Assigned: </span><strong>{dept.activeAssignments}</strong></div>
-                  <div><span style={{ color: "var(--text-muted)" }}>Value: </span><strong>{fmt(dept.stockValue)}</strong></div>
+                  <div><span style={{ color: "var(--text-muted)" }}>Item Types: </span><strong>{dept.itemCount}</strong></div>
+                  <div><span style={{ color: "var(--text-muted)" }}>In Store: </span><strong>{dept.totalStock} units</strong></div>
+                  <div><span style={{ color: "var(--text-muted)" }}>Assigned Out: </span><strong style={{ color: "var(--info)" }}>{dept.totalAssignedUnits || 0} units</strong></div>
+                  <div><span style={{ color: "var(--text-muted)" }}>Stock Value: </span><strong>{fmt(dept.stockValue)}</strong></div>
                 </div>
               </div>
             ))}
