@@ -75,7 +75,19 @@ export default function Departments({ showToast, departments, reloadDepartments 
     ...(isAdmin ? [{
       key: "actions", label: "", align: "right", render: (r) => (
         <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-          <Btn size="sm" variant="ghost" icon="edit" onClick={() => { setForm(r); setModal(r._id); }} />
+          <Btn size="sm" variant="ghost" icon="edit" onClick={() => {
+            setForm({
+              name: r.name || "",
+              icon: r.icon || "box",
+              color: r.color || "#6366f1",
+              description: r.description || "",
+              contactPerson: r.contactPerson || "",
+              phone: r.phone || "",
+              email: r.email || "",
+              location: r.location || "",
+            });
+            setModal(r._id);
+          }} />
           <Btn size="sm" variant="ghost" icon="trash" onClick={() => setDeleteId(r._id)} />
         </div>
       ),

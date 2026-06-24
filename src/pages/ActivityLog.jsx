@@ -15,6 +15,7 @@ export default function ActivityLog({ showToast }) {
   useEffect(() => { loadData(); }, [filterType, limit]);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       const params = { limit };
       if (filterType) params.type = filterType;

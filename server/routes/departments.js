@@ -57,7 +57,8 @@ router.post("/", requireAdmin, async (req, res) => {
 // PUT update department — admin only
 router.put("/:id", requireAdmin, async (req, res) => {
   try {
-    const dept = await Department.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { _id, __v, createdAt, updatedAt, ...updateData } = req.body;
+    const dept = await Department.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!dept) return res.status(404).json({ error: "Department not found" });
     await ActivityLog.create({
       action: `Department "${dept.name}" updated`,

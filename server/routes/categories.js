@@ -1,7 +1,7 @@
 import express from "express";
 import Category from "../models/Category.js";
 import ActivityLog from "../models/ActivityLog.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.get("/", async (req, res) => {
 });
 
 // POST create category
-router.post("/", async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   try {
     const cat = await Category.create(req.body);
     await ActivityLog.create({
@@ -32,7 +32,7 @@ router.post("/", async (req, res) => {
 });
 
 // DELETE category
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const cat = await Category.findByIdAndDelete(req.params.id);
     if (!cat) return res.status(404).json({ error: "Category not found" });

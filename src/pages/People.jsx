@@ -96,7 +96,14 @@ export default function People({ showToast, departments }) {
         <Btn size="sm" variant="ghost" icon="eye" onClick={(e) => { e.stopPropagation(); viewDetails(r); }} />
         <Btn size="sm" variant="ghost" icon="edit" onClick={(e) => {
           e.stopPropagation();
-          setForm({ ...r, departmentId: r.departmentId?._id || r.departmentId });
+          setForm({
+            name: r.name || "",
+            employeeId: r.employeeId || "",
+            departmentId: r.departmentId?._id || r.departmentId || "",
+            designation: r.designation || "",
+            email: r.email || "",
+            phone: r.phone || "",
+          });
           setModal(r._id);
         }} />
         <Btn size="sm" variant="ghost" icon="trash" onClick={(e) => { e.stopPropagation(); setDeleteId(r._id); }} />

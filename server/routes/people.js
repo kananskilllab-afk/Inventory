@@ -2,7 +2,7 @@ import express from "express";
 import Person from "../models/Person.js";
 import Assignment from "../models/Assignment.js";
 import ActivityLog from "../models/ActivityLog.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -43,7 +43,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // POST create person
-router.post("/", async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   try {
     const person = await Person.create(req.body);
     const populated = await Person.findById(person._id).populate("departmentId");
@@ -60,9 +60,10 @@ router.post("/", async (req, res) => {
 });
 
 // PUT update person
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAdmin, async (req, res) => {
   try {
-    const person = await Person.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate("departmentId");
+    const { _id, __v, createdAt, updatedAt, ...updateData } = req.body;
+    const person = await Person.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate("departmentId");
     if (!person) return res.status(404).json({ error: "Person not found" });
     await ActivityLog.create({
       action: `Employee "${person.name}" updated`,
@@ -76,7 +77,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE person
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const activeAssignments = await Assignment.countDocuments({ personId: req.params.id, status: "Active" });
     if (activeAssignments > 0) {

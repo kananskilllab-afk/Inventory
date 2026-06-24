@@ -15,9 +15,10 @@ export default function Dashboard({ setPage }) {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isAdmin]);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       const [dashData, actData] = await Promise.all([
         api.getDashboard(),

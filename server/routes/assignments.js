@@ -4,7 +4,7 @@ import Item from "../models/Item.js";
 import Person from "../models/Person.js";
 import Department from "../models/Department.js";
 import ActivityLog from "../models/ActivityLog.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -57,7 +57,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // POST create assignment
-router.post("/", async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   try {
     const { itemId, personId, departmentId, quantityAssigned, conditionOnAssign, assignedDate, expectedReturnDate, notes, issuedBy } = req.body;
 
@@ -106,7 +106,7 @@ router.post("/", async (req, res) => {
 });
 
 // PATCH return item
-router.patch("/:id/return", async (req, res) => {
+router.patch("/:id/return", requireAdmin, async (req, res) => {
   try {
     const { conditionOnReturn, returnNotes, returnedDate } = req.body;
     const assignment = await Assignment.findById(req.params.id)

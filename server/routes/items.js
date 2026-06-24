@@ -1,7 +1,7 @@
 import express from "express";
 import Item from "../models/Item.js";
 import ActivityLog from "../models/ActivityLog.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -40,7 +40,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // POST create item
-router.post("/", async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   try {
     const item = await Item.create(req.body);
     const populated = await Item.findById(item._id).populate("departmentId");
@@ -58,9 +58,10 @@ router.post("/", async (req, res) => {
 });
 
 // PUT update item
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAdmin, async (req, res) => {
   try {
-    const item = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate("departmentId");
+    const { _id, __v, createdAt, updatedAt, ...updateData } = req.body;
+    const item = await Item.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate("departmentId");
     if (!item) return res.status(404).json({ error: "Item not found" });
     await ActivityLog.create({
       action: `Item "${item.name}" updated`,
@@ -75,7 +76,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE item
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const item = await Item.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ error: "Item not found" });
@@ -91,7 +92,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 // PATCH stock in/out
-router.patch("/:id/stock", async (req, res) => {
+router.patch("/:id/stock", requireAdmin, async (req, res) => {
   try {
     const { type, quantity, note } = req.body;
     const item = await Item.findById(req.params.id).populate("departmentId");

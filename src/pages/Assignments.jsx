@@ -91,7 +91,7 @@ export default function Assignments({ showToast, departments }) {
     const matchSearch = !search ||
       (a.itemId?.name || "").toLowerCase().includes(search.toLowerCase()) ||
       (a.personId?.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      a.receiptNo.toLowerCase().includes(search.toLowerCase());
+      (a.receiptNo || "").toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchDept && matchSearch;
   });
 
