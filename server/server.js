@@ -19,6 +19,13 @@ import reportRoutes from "./routes/reports.js";
 
 dotenv.config();
 
+if (!process.env.MONGODB_URI) {
+  process.env.MONGODB_URI = "mongodb+srv://kananskilllab_db_user:DDjGQUaKsG9gij8t@cluster0.ulk2olz.mongodb.net/inventory-management?appName=Cluster0";
+}
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = "stockflow_super_secret_jwt_key_2024_change_in_production";
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 

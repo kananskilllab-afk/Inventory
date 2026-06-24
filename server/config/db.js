@@ -97,7 +97,7 @@ async function srvToDirectUri(srvUri) {
 
 const connectDB = async () => {
   try {
-    const uri = process.env.MONGODB_URI || "";
+    const uri = process.env.MONGODB_URI || "mongodb+srv://kananskilllab_db_user:DDjGQUaKsG9gij8t@cluster0.ulk2olz.mongodb.net/inventory-management?appName=Cluster0";
     console.log("Connecting to MongoDB...");
 
     // Convert SRV URI to direct URI (also sets up DNS cache)
