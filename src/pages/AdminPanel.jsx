@@ -73,7 +73,8 @@ export default function AdminPanel({ showToast, departments }) {
   ];
 
   const roleOptions = [
-    { value: "admin", label: "Admin — full access to all departments" },
+    { value: "superadmin", label: "Super Admin — full system administration & user management" },
+    { value: "admin", label: "Admin — full access to all departments (no user management)" },
     { value: "user", label: "User — limited to assigned department" },
   ];
 
@@ -83,9 +84,11 @@ export default function AdminPanel({ showToast, departments }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
             width: 36, height: 36, borderRadius: "50%",
-            background: r.role === "admin"
-              ? "linear-gradient(135deg, #6366f1, #a855f7)"
-              : "linear-gradient(135deg, #22c55e, #16a34a)",
+            background: r.role === "superadmin"
+              ? "linear-gradient(135deg, #f59e0b, #d97706)"
+              : r.role === "admin"
+                ? "linear-gradient(135deg, #6366f1, #a855f7)"
+                : "linear-gradient(135deg, #22c55e, #16a34a)",
             display: "flex", alignItems: "center", justifyContent: "center",
             color: "#fff", fontWeight: 700, fontSize: 14, flexShrink: 0,
           }}>
@@ -99,17 +102,21 @@ export default function AdminPanel({ showToast, departments }) {
       ),
     },
     {
-      key: "role", label: "Role", render: (r) => (
-        <span style={{
-          display: "inline-flex", alignItems: "center", gap: 5,
-          padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600,
-          background: r.role === "admin" ? "rgba(99,102,241,0.12)" : "rgba(34,197,94,0.12)",
-          color: r.role === "admin" ? "#6366f1" : "#16a34a",
-        }}>
-          <Icon d={r.role === "admin" ? "shield" : "person"} size={12} />
-          {r.role === "admin" ? "Admin" : "User"}
-        </span>
-      ),
+      key: "role", label: "Role", render: (r) => {
+        const isSuper = r.role === "superadmin";
+        const isAdmin = r.role === "admin";
+        return (
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600,
+            background: isSuper ? "rgba(245,158,11,0.12)" : isAdmin ? "rgba(99,102,241,0.12)" : "rgba(34,197,94,0.12)",
+            color: isSuper ? "#d97706" : isAdmin ? "#6366f1" : "#16a34a",
+          }}>
+            <Icon d={isSuper ? "shield" : isAdmin ? "shield" : "person"} size={12} />
+            {isSuper ? "Super Admin" : isAdmin ? "Admin" : "User"}
+          </span>
+        );
+      },
     },
     {
       key: "departmentName", label: "Department",
@@ -148,10 +155,10 @@ export default function AdminPanel({ showToast, departments }) {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 24 }}>
         {[
-          { label: "Total Users", value: users.length, color: "#6366f1" },
+          { label: "Total Users", value: users.length, color: "#3b82f6" },
+          { label: "Super Admins", value: users.filter((u) => u.role === "superadmin").length, color: "#f59e0b" },
           { label: "Admins", value: users.filter((u) => u.role === "admin").length, color: "#a855f7" },
           { label: "Users", value: users.filter((u) => u.role === "user").length, color: "#22c55e" },
-          { label: "Departments", value: departments.length, color: "#f59e0b" },
         ].map((s) => (
           <div key={s.label} style={{
             background: "var(--surface)", borderRadius: 14,

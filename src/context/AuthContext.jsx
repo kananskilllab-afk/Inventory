@@ -22,10 +22,11 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("sf_token");
   }, []);
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const isSuperAdmin = user?.role === "superadmin";
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isAdmin, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   );

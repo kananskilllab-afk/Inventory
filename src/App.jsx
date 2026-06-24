@@ -16,7 +16,7 @@ import Reports from "./pages/Reports";
 import AdminPanel from "./pages/AdminPanel";
 
 function AppInner() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isSuperAdmin } = useAuth();
   const [page, setPage] = useState("dashboard");
   const [sideOpen, setSideOpen] = useState(true);
   const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
@@ -63,7 +63,7 @@ function AppInner() {
     { id: "assignments", label: "Assignments", icon: "assign" },
     { id: "activity", label: "Activity Log", icon: "activity" },
     { id: "reports", label: "Reports", icon: "reports" },
-    ...(isAdmin ? [{ id: "admin", label: "Admin Panel", icon: "shield" }] : []),
+    ...(isSuperAdmin ? [{ id: "admin", label: "Admin Panel", icon: "shield" }] : []),
   ];
 
   const pages = {
@@ -75,7 +75,7 @@ function AppInner() {
     assignments: <Assignments showToast={showToast} departments={departments} />,
     activity: <ActivityLog showToast={showToast} />,
     reports: <Reports showToast={showToast} />,
-    ...(isAdmin ? { admin: <AdminPanel showToast={showToast} departments={departments} /> } : {}),
+    ...(isSuperAdmin ? { admin: <AdminPanel showToast={showToast} departments={departments} /> } : {}),
   };
 
   return (
@@ -112,15 +112,17 @@ function AppInner() {
             margin: "12px 8px 0",
             padding: "10px 12px",
             borderRadius: 10,
-            background: isAdmin ? "rgba(99,102,241,0.08)" : "rgba(34,197,94,0.08)",
-            border: `1px solid ${isAdmin ? "rgba(99,102,241,0.15)" : "rgba(34,197,94,0.15)"}`,
+            background: isSuperAdmin ? "rgba(245,158,11,0.08)" : isAdmin ? "rgba(99,102,241,0.08)" : "rgba(34,197,94,0.08)",
+            border: `1px solid ${isSuperAdmin ? "rgba(245,158,11,0.15)" : isAdmin ? "rgba(99,102,241,0.15)" : "rgba(34,197,94,0.15)"}`,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{
                 width: 28, height: 28, borderRadius: "50%",
-                background: isAdmin
-                  ? "linear-gradient(135deg, #6366f1, #a855f7)"
-                  : "linear-gradient(135deg, #22c55e, #16a34a)",
+                background: isSuperAdmin
+                  ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                  : isAdmin
+                    ? "linear-gradient(135deg, #6366f1, #a855f7)"
+                    : "linear-gradient(135deg, #22c55e, #16a34a)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: "#fff", fontWeight: 700, fontSize: 12, flexShrink: 0,
               }}>
@@ -131,9 +133,9 @@ function AppInner() {
                   {user.name}
                 </div>
                 <div style={{
-                  fontSize: 11, color: isAdmin ? "#6366f1" : "#16a34a", fontWeight: 600,
+                  fontSize: 11, color: isSuperAdmin ? "#d97706" : isAdmin ? "#6366f1" : "#16a34a", fontWeight: 600,
                 }}>
-                  {isAdmin ? "Administrator" : user.departmentName || "User"}
+                  {isSuperAdmin ? "Super Admin" : isAdmin ? "Administrator" : user.departmentName || "User"}
                 </div>
               </div>
             </div>

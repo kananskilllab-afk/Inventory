@@ -1,7 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { requireAuth, requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -11,11 +11,12 @@ router.get("/reset-admin", async (req, res) => {
     const existing = await User.findOne({ username: "admin" });
     if (existing) {
       existing.password = "admin123";
+      existing.role = "superadmin";
       await existing.save(); // triggers bcrypt hash via pre-save hook
-      return res.json({ message: "Admin password reset to admin123" });
+      return res.json({ message: "Admin password reset to admin123 and role set to superadmin" });
     }
-    await User.create({ name: "Admin", username: "admin", password: "admin123", role: "admin" });
-    res.json({ message: "Admin account created — username: admin, password: admin123" });
+    await User.create({ name: "Admin", username: "admin", password: "admin123", role: "superadmin" });
+    res.json({ message: "Admin account created with superadmin role — username: admin, password: admin123" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -50,7 +51,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// POST /api/auth/register — first user becomes admin; after that, admin-only
+// POST /api/auth/register — first user becomes superadmin; after that, superadmin-only
 router.post("/register", async (req, res) => {
   try {
     const { name, username, password, role, departmentId } = req.body;
@@ -59,20 +60,20 @@ router.post("/register", async (req, res) => {
 
     const userCount = await User.countDocuments();
 
-    // After first user, require admin auth
+    // After first user, require superadmin auth
     if (userCount > 0) {
       const token = req.headers.authorization?.split(" ")[1];
-      if (!token) return res.status(401).json({ error: "Admin authentication required" });
+      if (!token) return res.status(401).json({ error: "Superadmin authentication required" });
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const requestingUser = await User.findById(decoded.id);
-      if (!requestingUser || requestingUser.role !== "admin")
-        return res.status(403).json({ error: "Only admins can create users" });
+      if (!requestingUser || requestingUser.role !== "superadmin")
+        return res.status(403).json({ error: "Only superadmins can create users" });
     }
 
-    const assignedRole = userCount === 0 ? "admin" : (role || "user");
+    const assignedRole = userCount === 0 ? "superadmin" : (role || "user");
     const user = await User.create({
       name,
-      username,
+      username: username.toLowerCase(),
       password,
       role: assignedRole,
       departmentId: departmentId || null,
@@ -88,12 +89,20 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// PUT /api/auth/users/:id — admin updates user
-router.put("/users/:id", requireAuth, requireAdmin, async (req, res) => {
+// PUT /api/auth/users/:id — superadmin updates user
+router.put("/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     const { name, username, password, role, departmentId } = req.body;
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Prevent changing role of the last superadmin to prevent system lockouts
+    if (user.role === "superadmin" && role && role !== "superadmin") {
+      const superadminCount = await User.countDocuments({ role: "superadmin" });
+      if (superadminCount <= 1) {
+        return res.status(400).json({ error: "Cannot downgrade the only superadmin" });
+      }
+    }
 
     if (name) user.name = name;
     if (username) user.username = username.toLowerCase();
@@ -102,21 +111,32 @@ router.put("/users/:id", requireAuth, requireAdmin, async (req, res) => {
     user.departmentId = departmentId || null;
 
     await user.save();
-    res.json({ message: "User updated" });
+    res.json({ message: "User updated successfully" });
   } catch (err) {
     if (err.code === 11000) return res.status(400).json({ error: "Username already exists" });
     res.status(400).json({ error: err.message });
   }
 });
 
-// DELETE /api/auth/users/:id — admin deletes user
-router.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
+// DELETE /api/auth/users/:id — superadmin deletes user
+router.delete("/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     if (req.params.id === req.user._id.toString())
       return res.status(400).json({ error: "Cannot delete your own account" });
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ message: "User deleted" });
+
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) return res.status(404).json({ error: "User not found" });
+
+    // Prevent deleting the only superadmin
+    if (targetUser.role === "superadmin") {
+      const superadminCount = await User.countDocuments({ role: "superadmin" });
+      if (superadminCount <= 1) {
+        return res.status(400).json({ error: "Cannot delete the only superadmin" });
+      }
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -136,8 +156,8 @@ router.get("/me", requireAuth, (req, res) => {
   });
 });
 
-// GET /api/auth/users — admin lists all users
-router.get("/users", requireAuth, requireAdmin, async (req, res) => {
+// GET /api/auth/users — superadmin lists all users
+router.get("/users", requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     const users = await User.find().populate("departmentId").sort({ createdAt: 1 });
     res.json(users.map((u) => ({

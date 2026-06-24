@@ -43,12 +43,12 @@ async function seedAdmin() {
   if (existing) {
     // Reset password so admin/admin123 always works
     existing.password = "admin123";
-    existing.role = "admin";
+    existing.role = "superadmin";
     await existing.save();
-    console.log("✅ Admin account ready  →  username: admin  |  password: admin123");
+    console.log("✅ SuperAdmin account ready  →  username: admin  |  password: admin123");
   } else {
-    await User.create({ name: "Admin", username: "admin", password: "admin123", role: "admin" });
-    console.log("✅ Admin account created  →  username: admin  |  password: admin123");
+    await User.create({ name: "Admin", username: "admin", password: "admin123", role: "superadmin" });
+    console.log("✅ SuperAdmin account created  →  username: admin  |  password: admin123");
   }
 }
 
