@@ -56,25 +56,31 @@ function AppInner() {
 
   const nav = [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
-    { id: "items", label: "Stationary", icon: "items" },
-    { id: "departments", label: "Departments", icon: "department" },
-    { id: "people", label: "People", icon: "people" },
-    { id: "inventory", label: "Inventory", icon: "stock" },
-    { id: "assignments", label: "Assignments", icon: "assign" },
-    { id: "activity", label: "Activity Log", icon: "activity" },
-    { id: "reports", label: "Reports", icon: "reports" },
+    ...(isAdmin ? [
+      { id: "items", label: "Stationary", icon: "items" },
+      { id: "departments", label: "Departments", icon: "department" },
+      { id: "people", label: "People", icon: "people" },
+      { id: "inventory", label: "Inventory", icon: "stock" },
+      { id: "assignments", label: "Assignments", icon: "assign" },
+      { id: "activity", label: "Activity Log", icon: "activity" },
+      { id: "reports", label: "Reports", icon: "reports" },
+    ] : [
+      { id: "assignments", label: "My Assignments", icon: "assign" },
+    ]),
     ...(isSuperAdmin ? [{ id: "admin", label: "Admin Panel", icon: "shield" }] : []),
   ];
 
   const pages = {
     dashboard: <Dashboard setPage={setPage} showToast={showToast} />,
-    items: <ItemsMaster showToast={showToast} departments={departments} />,
-    departments: <Departments showToast={showToast} departments={departments} reloadDepartments={loadDepartments} />,
-    people: <People showToast={showToast} departments={departments} />,
-    inventory: <Inventory showToast={showToast} departments={departments} />,
     assignments: <Assignments showToast={showToast} departments={departments} />,
-    activity: <ActivityLog showToast={showToast} />,
-    reports: <Reports showToast={showToast} />,
+    ...(isAdmin ? {
+      items: <ItemsMaster showToast={showToast} departments={departments} />,
+      departments: <Departments showToast={showToast} departments={departments} reloadDepartments={loadDepartments} />,
+      people: <People showToast={showToast} departments={departments} />,
+      inventory: <Inventory showToast={showToast} departments={departments} />,
+      activity: <ActivityLog showToast={showToast} />,
+      reports: <Reports showToast={showToast} />,
+    } : {}),
     ...(isSuperAdmin ? { admin: <AdminPanel showToast={showToast} departments={departments} /> } : {}),
   };
 

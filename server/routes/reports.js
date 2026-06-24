@@ -12,7 +12,7 @@ router.use(requireAuth);
 // GET dashboard stats
 router.get("/dashboard", async (req, res) => {
   try {
-    const isAdmin = req.user.role === "admin";
+    const isAdmin = req.user.role === "admin" || req.user.role === "superadmin";
     const deptFilter = isAdmin ? {} : { departmentId: req.user.departmentId };
     const deptAssignFilter = isAdmin ? {} : { departmentId: req.user.departmentId };
 
@@ -62,6 +62,14 @@ router.get("/dashboard", async (req, res) => {
       $expr: { $lt: ["$quantity", "$reorderLevel"] },
     }).populate("departmentId").limit(20);
 
+    let userActiveAssignments = 0;
+    if (!isAdmin) {
+      const person = await Person.findOne({ email: req.user.username.toLowerCase() });
+      if (person) {
+        userActiveAssignments = await Assignment.countDocuments({ personId: person._id, status: "Active" });
+      }
+    }
+
     res.json({
       totalItems,
       totalStock: totalStock[0]?.total || 0,
@@ -70,6 +78,7 @@ router.get("/dashboard", async (req, res) => {
       overdueAssignments,
       deptStats,
       lowStockItems,
+      userActiveAssignments,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -80,7 +89,7 @@ router.get("/dashboard", async (req, res) => {
 router.get("/export/:type", async (req, res) => {
   try {
     const { type } = req.params;
-    const isAdmin = req.user.role === "admin";
+    const isAdmin = req.user.role === "admin" || req.user.role === "superadmin";
     const deptFilter = isAdmin ? {} : { departmentId: req.user.departmentId };
     let data = [];
     let filename = "";

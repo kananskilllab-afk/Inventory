@@ -14,7 +14,7 @@ router.get("/", async (req, res) => {
     if (req.query.category) filter.category = req.query.category;
 
     // Non-admin users can only see their department's items
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "superadmin") {
       if (!req.user.departmentId) return res.json([]);
       filter.departmentId = req.user.departmentId;
     } else if (req.query.departmentId) {

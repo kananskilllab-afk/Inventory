@@ -14,7 +14,7 @@ router.get("/", async (req, res) => {
     if (type) filter.type = type;
 
     // Non-admin: scope to their department
-    if (req.user.role !== "admin" && req.user.departmentId) {
+    if (req.user.role !== "admin" && req.user.role !== "superadmin" && req.user.departmentId) {
       const dept = req.user.departmentId;
       filter.departmentName = dept.name || dept;
     }

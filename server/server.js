@@ -61,6 +61,14 @@ async function seedAdmin() {
     await User.create({ name: "Admin", username: "admin", password: "admin123", role: "superadmin" });
     console.log("✅ SuperAdmin account created  →  username: admin  |  password: admin123");
   }
+
+  // Ensure bhargav.chauhan@kanan.co has superadmin role if they exist
+  const bhargav = await User.findOne({ username: "bhargav.chauhan@kanan.co" });
+  if (bhargav && bhargav.role !== "superadmin") {
+    bhargav.role = "superadmin";
+    await bhargav.save();
+    console.log("✅ Promoted bhargav.chauhan@kanan.co to SuperAdmin in startup seed");
+  }
 }
 
 async function seedDatabase() {

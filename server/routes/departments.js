@@ -12,7 +12,7 @@ router.use(requireAuth);
 // Admin: all departments; regular user: only their own department
 router.get("/", async (req, res) => {
   try {
-    if (req.user.role === "admin") {
+    if (req.user.role === "admin" || req.user.role === "superadmin") {
       const departments = await Department.find().sort({ createdAt: 1 });
       return res.json(departments);
     }
@@ -31,7 +31,7 @@ router.get("/:id", async (req, res) => {
     const dept = await Department.findById(req.params.id);
     if (!dept) return res.status(404).json({ error: "Department not found" });
     // Non-admin can only view their own department
-    if (req.user.role !== "admin" && req.user.departmentId?.toString() !== dept._id.toString())
+    if (req.user.role !== "admin" && req.user.role !== "superadmin" && req.user.departmentId?.toString() !== dept._id.toString())
       return res.status(403).json({ error: "Access denied" });
     res.json(dept);
   } catch (err) {

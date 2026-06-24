@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
   try {
     const filter = {};
 
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "superadmin") {
       if (!req.user.departmentId) return res.json([]);
       filter.departmentId = req.user.departmentId;
     } else if (req.query.departmentId) {

@@ -9,8 +9,10 @@ import Select from "../components/Select";
 import Textarea from "../components/Textarea";
 import Badge from "../components/Badge";
 import AssignmentReceipt from "../receipts/AssignmentReceipt";
+import { useAuth } from "../context/AuthContext";
 
 export default function Assignments({ showToast, departments }) {
+  const { isAdmin } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [items, setItems] = useState([]);
   const [people, setPeople] = useState([]);
@@ -136,7 +138,7 @@ export default function Assignments({ showToast, departments }) {
     { key: "actions", label: "", align: "right", render: (r) => (
       <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
         <Btn size="sm" variant="ghost" icon="download" onClick={(e) => { e.stopPropagation(); setViewReceipt(r); }} />
-        {r.status !== "Returned" && (
+        {isAdmin && r.status !== "Returned" && (
           <Btn size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setReturnModal(r); }}
             style={{ fontSize: 12, padding: "4px 10px" }}>Return</Btn>
         )}
@@ -164,7 +166,7 @@ export default function Assignments({ showToast, departments }) {
             {assignments.filter((a) => a.status === "Active").length} active • {assignments.filter((a) => a.status === "Returned").length} returned
           </p>
         </div>
-        <Btn icon="assign" onClick={() => setModal(true)}>Assign Item</Btn>
+        {isAdmin && <Btn icon="assign" onClick={() => setModal(true)}>Assign Item</Btn>}
       </div>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
