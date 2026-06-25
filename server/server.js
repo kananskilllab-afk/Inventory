@@ -20,7 +20,7 @@ import reportRoutes from "./routes/reports.js";
 
 dotenv.config();
 
-if (!process.env.MONGODB_URI) {
+if (!process.env.MONGODB_URI || process.env.MONGODB_URI.includes("p71b2.mongodb.net")) {
   process.env.MONGODB_URI = "mongodb+srv://kananskilllab_db_user:DDjGQUaKsG9gij8t@cluster0.ulk2olz.mongodb.net/inventory-management?appName=Cluster0";
 }
 if (!process.env.JWT_SECRET) {
